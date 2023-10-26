@@ -4,20 +4,21 @@ import {
   AirtableConnectionDetails, AirtableIntrospectionDetails,
   AirtableField, AirtableRecord, AirtableTable,
 } from './types';
-import { Field } from '../../types';
+import { parseSchema } from '../../utils';
+import { DEFAULT_INTROSPECTION_DEPTH } from '../../constants';
 
 export class AirtableIntrospector extends DataSourceIntrospector {
   protected client!: AxiosInstance;
 
-  static mapFields({
-    fields, record: { fields: record },
-  }: { fields: AirtableField[], record: AirtableRecord }): Field[] {
-    return fields.map((field) => ({
-      name: field.name,
-      jsType: typeof record[field.name],
-      value: record[field.name],
-      dataSourceType: field.type,
-    }));
+  static mapFields({ fields, records }: { fields: AirtableField[], records: AirtableRecord[] }) {
+    return {
+      schema: parseSchema(records),
+      dataSourceType: fields.reduce((acc, field) => {
+        acc[field.name] = field.type;
+
+        return acc;
+      }, {} as Record<string, unknown>),
+    };
   }
 
   async init({ auth }: AirtableConnectionDetails) {
@@ -31,7 +32,11 @@ export class AirtableIntrospector extends DataSourceIntrospector {
     return this;
   }
 
-  async introspect({ baseId, tableId }: AirtableIntrospectionDetails) {
+  async introspect({
+    baseId,
+    tableId,
+    introspectionDepth = DEFAULT_INTROSPECTION_DEPTH,
+  }: AirtableIntrospectionDetails) {
     const {
       data: {
         tables,
@@ -45,17 +50,17 @@ export class AirtableIntrospector extends DataSourceIntrospector {
 
     const {
       data: {
-        records: [record],
+        records,
       },
     } = await this.client.get<{ records: AirtableRecord[] }>(`/${baseId}/${tableId}`, {
       headers: {
-        maxRecords: 1,
+        maxRecords: introspectionDepth,
       },
     });
 
     return AirtableIntrospector.mapFields({
       fields: table.fields,
-      record,
+      records,
     });
   }
 

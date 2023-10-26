@@ -1,6 +1,7 @@
 export type AirtableIntrospectionDetails = {
   tableId: string;
   baseId: string;
+  introspectionDepth?: number;
 };
 
 export type AirtableConnectionDetails = {

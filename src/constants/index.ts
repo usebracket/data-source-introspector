@@ -1,0 +1,1 @@
+export const DEFAULT_INTROSPECTION_DEPTH = 50;

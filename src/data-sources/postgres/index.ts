@@ -1,12 +1,13 @@
 import { FieldDef, Client as PostgresClient } from 'pg';
 import { DataSourceIntrospector } from '../data-source-introspector';
 import { PostgresConnectionDetails, PostgresIntrospectionDetails } from './types';
-import { Field } from '../../types';
+import { parseSchema } from '../../utils';
+import { DEFAULT_INTROSPECTION_DEPTH } from '../../constants';
 
 export class PostgresIntrospector extends DataSourceIntrospector {
   protected client!: PostgresClient;
 
-  static addLimitToQuery({ query, limit = 1 }: { query: string, limit?: number }) {
+  static addLimitToQuery({ query, limit = 100 }: { query: string, limit?: number }) {
     const extraQueryWithSemicolon = !/;\s*$/.test(query)
       ? `${query};`
       : query;
@@ -16,13 +17,15 @@ export class PostgresIntrospector extends DataSourceIntrospector {
       : extraQueryWithSemicolon.trim().slice(0, -1).concat(` LIMIT ${limit};`);
   }
 
-  static mapFields({ fields, row }: { fields: FieldDef[], row: Record<string, unknown> }): Field[] {
-    return fields.map((field) => ({
-      name: field.name,
-      jsType: typeof row[field.name],
-      value: row[field.name],
-      dataSourceType: field.dataTypeID,
-    }));
+  static mapFields({ fields, rows }: { fields: FieldDef[], rows: any[] }) {
+    return {
+      schema: parseSchema(rows),
+      dataSourceType: fields.reduce((acc, field) => {
+        acc[field.name] = field.dataTypeID;
+
+        return acc;
+      }, {} as Record<string, unknown>),
+    };
   }
 
   async init(pgConnectionDetails: PostgresConnectionDetails) {
@@ -34,17 +37,22 @@ export class PostgresIntrospector extends DataSourceIntrospector {
     return this;
   }
 
-  async introspect(pgIntrospectionDetails: PostgresIntrospectionDetails) {
-    const { table, schema, query: customQuery } = pgIntrospectionDetails;
-
+  async introspect({
+    table, schema,
+    query: customQuery,
+    introspectionDepth = DEFAULT_INTROSPECTION_DEPTH,
+  }: PostgresIntrospectionDetails) {
     try {
       if (customQuery) {
         const {
           fields,
-          rows: [row],
-        } = await this.client.query(PostgresIntrospector.addLimitToQuery({ query: customQuery }));
+          rows,
+        } = await this.client.query(PostgresIntrospector.addLimitToQuery({
+          query: customQuery,
+          limit: introspectionDepth,
+        }));
 
-        return PostgresIntrospector.mapFields({ fields, row });
+        return PostgresIntrospector.mapFields({ fields, rows });
       }
 
       const schemaString = schema ? `${schema}.` : '';
@@ -52,10 +60,13 @@ export class PostgresIntrospector extends DataSourceIntrospector {
 
       const {
         fields,
-        rows: [row],
-      } = await this.client.query(PostgresIntrospector.addLimitToQuery({ query }));
+        rows,
+      } = await this.client.query(PostgresIntrospector.addLimitToQuery({
+        query,
+        limit: introspectionDepth,
+      }));
 
-      return PostgresIntrospector.mapFields({ fields, row });
+      return PostgresIntrospector.mapFields({ fields, rows });
     } catch (error) {
       throw new Error(`Error fetching fields for table ${table} with error: ${error}`);
     }
