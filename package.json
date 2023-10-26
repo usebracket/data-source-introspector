@@ -1,6 +1,6 @@
 {
   "name": "data-source-introspector",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -45,6 +45,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.5.1",
     "pg": "^8.11.3"
   }
 }

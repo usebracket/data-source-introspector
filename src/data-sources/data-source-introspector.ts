@@ -1,11 +1,11 @@
-import { Client as PostgresClient } from 'pg';
-import { PostgresConnectionDetails, PostgresIntrospectionDetails } from './postgres/types';
+import { DataSourceClient, DataSourceConnectionDetails, DataSourceIntrospectDetails } from './types';
+import { Field } from '../types';
 
 export abstract class DataSourceIntrospector {
-  protected abstract client: PostgresClient;
-  public abstract init(connectionDetails: PostgresConnectionDetails): Promise<this>;
+  protected abstract client: DataSourceClient;
+  public abstract init(connectionDetails: DataSourceConnectionDetails): Promise<this>;
 
-  public abstract introspect(introspectionDetails: PostgresIntrospectionDetails): Promise<unknown>;
+  public abstract introspect(introspectionDetails: DataSourceIntrospectDetails): Promise<Field[]>;
 
   public abstract destroy(): Promise<void>;
 }
