@@ -1,5 +1,16 @@
 type JSTypes = 'undefined' | 'object' | 'boolean' | 'number' | 'bigint' | 'string' | 'symbol' | 'function';
-type BracketTypes = Omit<JSTypes, 'symbol' | 'function'> | 'array';
+export enum BracketTypes {
+  UNDEFINED = 'undefined',
+  OBJECT = 'object',
+  BOOLEAN = 'boolean',
+  NUMBER = 'number',
+  BIGINT = 'bigint',
+  STRING = 'string',
+  ARRAY = 'ARRAY',
+  NULL = 'null',
+  DATE = 'date',
+}
+
 type Probability = {
   probability: number;
 };
@@ -7,7 +18,7 @@ type BracketPrimitives = {
   type: Omit<JSTypes, 'symbol' | 'function'> | 'object'
 } & Probability;
 type BracketArray = {
-  type: 'array';
+  type: BracketTypes.ARRAY;
   itemsType: Array<BracketType>;
 } & Probability;
 type BracketObjectProps = {
@@ -16,7 +27,7 @@ type BracketObjectProps = {
   properties?: Record<string, BracketObjectProps>;
 } & Probability;
 type BracketObject = {
-  type: 'object';
+  type: BracketTypes.OBJECT;
   properties: Record<string, BracketObjectProps>;
 } & Probability;
 export type BracketType = BracketPrimitives | BracketArray | BracketObject;

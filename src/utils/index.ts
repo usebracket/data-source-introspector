@@ -1,17 +1,55 @@
-import { BracketType } from '../types';
+import {
+  isNull, isDate, isObject, isArray,
+} from 'lodash';
+import { BracketType, BracketTypes } from '../types';
 
-export const parseSchema = (arr: Array<Record<string, unknown>>) => {
+const getArraySchema = (arrToIntrospect: Array<any>) => {
+  const arr = {
+    type: BracketTypes.ARRAY,
+    items: arrToIntrospect,
+  };
+
+  return arr;
+};
+
+const getObjectSchema = (objToIntrospect: Record<string, any>) => {
+  const obj = {
+    type: BracketTypes.OBJECT,
+    properties: {} as Record<keyof typeof objToIntrospect, unknown>,
+  };
+
+  Object.entries(objToIntrospect).forEach(([key, value]) => {
+    if (isNull(value)) {
+      obj.properties[key] = BracketTypes.NULL;
+      return;
+    }
+
+    if (isDate(value)) {
+      obj.properties[key] = BracketTypes.DATE;
+      return;
+    }
+
+    if (isArray(value)) {
+      obj.properties[key] = getArraySchema(value);
+      return;
+    }
+
+    if (isObject(value)) {
+      obj.properties[key] = getObjectSchema(value);
+      return;
+    }
+
+    obj.properties[key] = typeof value;
+  });
+
+  return obj;
+};
+
+export const parseSchema = (arrToIntrospect: Array<Record<string, any>>) => {
   const map = new Map<string, number>();
 
-  arr.forEach((item) => {
-    const obj = {
-      type: 'object',
-      properties: {} as Record<keyof typeof item, unknown>,
-    };
-
-    Object.entries(item).forEach(([key, value]) => {
-      obj.properties[key] = typeof value;
-    });
+  arrToIntrospect.forEach((item) => {
+    const obj = getObjectSchema(item);
 
     const key = JSON.stringify(obj);
     const value = map.get(key);
@@ -28,7 +66,7 @@ export const parseSchema = (arr: Array<Record<string, unknown>>) => {
   map.forEach((value, key) => {
     result.push({
       ...JSON.parse(key),
-      probability: (100 * value) / arr.length,
+      probability: (100 * value) / arrToIntrospect.length,
     });
   });
 
