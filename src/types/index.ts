@@ -5,7 +5,7 @@ export enum BracketTypes {
   NUMBER = 'number',
   BIGINT = 'bigint',
   STRING = 'string',
-  ARRAY = 'ARRAY',
+  ARRAY = 'array',
   NULL = 'null',
   DATE = 'date',
 }
