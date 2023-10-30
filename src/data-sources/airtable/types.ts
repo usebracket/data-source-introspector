@@ -1,8 +1,9 @@
+import { IntrospectionDepth } from '../../types';
+
 export type AirtableIntrospectionDetails = {
   tableId: string;
   baseId: string;
-  introspectionDepth?: number;
-};
+} & IntrospectionDepth;
 
 export type AirtableConnectionDetails = {
   auth: string;

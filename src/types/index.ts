@@ -1,4 +1,3 @@
-type JSTypes = 'undefined' | 'object' | 'boolean' | 'number' | 'bigint' | 'string' | 'symbol' | 'function';
 export enum BracketTypes {
   UNDEFINED = 'undefined',
   OBJECT = 'object',
@@ -11,28 +10,32 @@ export enum BracketTypes {
   DATE = 'date',
 }
 
-type Probability = {
-  probability: number;
+export type TypeDescription = {
+  probability: number,
+  unique: number,
+  values: unknown[],
+  type: BracketTypes,
+  count: number
 };
-type BracketPrimitives = {
-  type: Omit<JSTypes, 'symbol' | 'function'> | 'object'
-} & Probability;
-type BracketArray = {
-  type: BracketTypes.ARRAY;
-  itemsType: Array<BracketType>;
-} & Probability;
-type BracketObjectProps = {
-  type: BracketTypes;
-  required?: boolean;
-  properties?: Record<string, BracketObjectProps>;
-} & Probability;
-type BracketObject = {
-  type: BracketTypes.OBJECT;
-  properties: Record<string, BracketObjectProps>;
-} & Probability;
-export type BracketType = BracketPrimitives | BracketArray | BracketObject;
+
+export type PropertyDescription = {
+  count: number;
+  dataSourceType: unknown;
+  hasDuplicates: boolean;
+  probability: number;
+  nullProbability: number;
+  types: TypeDescription[],
+};
 
 export type IntrospectionResult = {
-  dataSourceType: Record<string, unknown>;
-  schema: BracketType[];
+  fields: Map<string, PropertyDescription>;
+};
+
+export type DataSourceFields = {
+  name: string;
+  type: unknown;
+};
+
+export type IntrospectionDepth = {
+  introspectionDepth?: number;
 };

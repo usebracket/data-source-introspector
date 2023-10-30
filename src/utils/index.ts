@@ -1,74 +1,107 @@
 import {
   isNull, isDate, isObject, isArray,
+  isUndefined, isNumber, isString, isBoolean,
 } from 'lodash';
-import { BracketType, BracketTypes } from '../types';
+import {
+  BracketTypes, DataSourceFields, PropertyDescription, TypeDescription,
+} from '../types';
 
-const getArraySchema = (arrToIntrospect: Array<any>) => {
-  const arr = {
-    type: BracketTypes.ARRAY,
-    items: arrToIntrospect,
-  };
+const getBracketType = (val: unknown): BracketTypes => {
+  if (isArray(val)) {
+    return BracketTypes.ARRAY;
+  }
 
-  return arr;
+  if (isDate(val)) {
+    return BracketTypes.DATE;
+  }
+
+  if (isNull(val)) {
+    return BracketTypes.NULL;
+  }
+
+  if (isObject(val)) {
+    return BracketTypes.OBJECT;
+  }
+
+  if (isNumber(val)) {
+    return BracketTypes.NUMBER;
+  }
+
+  if (isString(val)) {
+    return BracketTypes.STRING;
+  }
+
+  if (isBoolean(val)) {
+    return BracketTypes.BOOLEAN;
+  }
+
+  return BracketTypes.UNDEFINED;
 };
 
-const getObjectSchema = (objToIntrospect: Record<string, any>) => {
-  const obj = {
-    type: BracketTypes.OBJECT,
-    properties: {} as Record<keyof typeof objToIntrospect, unknown>,
-  };
+export const parseSchema = ({
+  fields,
+  rows,
+}: { fields: DataSourceFields[], rows: Array<Record<string, any>> }) => {
+  const [fistItem] = rows;
 
-  Object.entries(objToIntrospect).forEach(([key, value]) => {
-    if (isNull(value)) {
-      obj.properties[key] = BracketTypes.NULL;
-      return;
-    }
+  if (!fistItem) {
+    throw new Error('Array can not be empty');
+  }
 
-    if (isDate(value)) {
-      obj.properties[key] = BracketTypes.DATE;
-      return;
-    }
+  const schema = Object.fromEntries<any[]>(
+    Object.entries<typeof fistItem>(fistItem).map(([key]) => [key, []]),
+  );
 
-    if (isArray(value)) {
-      obj.properties[key] = getArraySchema(value);
-      return;
-    }
-
-    if (isObject(value)) {
-      obj.properties[key] = getObjectSchema(value);
-      return;
-    }
-
-    obj.properties[key] = typeof value;
-  });
-
-  return obj;
-};
-
-export const parseSchema = (arrToIntrospect: Array<Record<string, any>>) => {
-  const map = new Map<string, number>();
-
-  arrToIntrospect.forEach((item) => {
-    const obj = getObjectSchema(item);
-
-    const key = JSON.stringify(obj);
-    const value = map.get(key);
-
-    if (value) {
-      map.set(key, value + 1);
-    } else {
-      map.set(key, 1);
-    }
-  });
-
-  const result: BracketType[] = [];
-
-  map.forEach((value, key) => {
-    result.push({
-      ...JSON.parse(key),
-      probability: (100 * value) / arrToIntrospect.length,
+  rows.forEach((row) => {
+    Object.keys(row).forEach((key) => {
+      const value = row[key];
+      schema[key].push(value);
     });
   });
 
-  return result.toSorted((a, b) => b.probability - a.probability);
+  const result = new Map<string, PropertyDescription>();
+
+  Object.entries(schema).forEach(([key, value]) => {
+    const nonUndefinedValuesCount = value.filter((item) => !isUndefined(item)).length;
+    const hasDuplicates = new Set(value).size !== value.length;
+    const probability = nonUndefinedValuesCount / rows.length;
+    const nullProbability = value.filter((item) => isNull(item)).length / value.length;
+
+    const typeMap = new Map<BracketTypes, number>();
+    value.forEach((item) => {
+      const type = getBracketType(item);
+      const count = typeMap.get(type);
+
+      if (count) {
+        typeMap.set(type, count + 1);
+      } else {
+        typeMap.set(type, 1);
+      }
+    });
+
+    const mappedTypes: TypeDescription[] = [];
+
+    typeMap.forEach((uniqueTypesCount, type) => {
+      const values = value.filter((item) => getBracketType(item) === type);
+
+      mappedTypes.push({
+        count: uniqueTypesCount,
+        probability: uniqueTypesCount / value.length,
+        unique: new Set(values).size,
+        values,
+        type,
+      });
+    });
+
+    result.set(key, {
+      count: nonUndefinedValuesCount,
+      dataSourceType: fields.find((field) => field.name === key)?.type,
+      hasDuplicates,
+      probability,
+      nullProbability,
+      types: mappedTypes,
+    });
+  });
+
+  return result;
 };

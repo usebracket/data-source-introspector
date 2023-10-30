@@ -3,7 +3,7 @@ import { IntrospectionResult } from '../types';
 
 export abstract class DataSourceIntrospector {
   protected abstract client: DataSourceClient;
-  public abstract init(connectionDetails: DataSourceConnectionDetails): Promise<this>;
+  public abstract init(connectionDetails: DataSourceConnectionDetails): Promise<void>;
 
   public abstract introspect(
     introspectionDetails: DataSourceIntrospectDetails
