@@ -4,5 +4,5 @@
   ],
   "ext": ".ts,.js",
   "ignore": [],
-  "exec": "clear && npx ts-node src/examples/airtable/index.ts"
+  "exec": "clear && npx ts-node src/examples/postgres/index.ts"
 }

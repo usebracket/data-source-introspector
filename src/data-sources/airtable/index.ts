@@ -2,22 +2,22 @@ import axios, { AxiosInstance } from 'axios';
 import { DataSourceIntrospector } from '../data-source-introspector';
 import {
   AirtableConnectionDetails, AirtableIntrospectionDetails,
-  AirtableField, AirtableRecord, AirtableTable,
+  AirtableRecord, AirtableTable,
 } from './types';
-import { Field } from '../../types';
+import { parseFieldsDefinition } from '../../utils';
+import { DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE } from '../../constants';
+import { DataSourceFields } from '../../types';
 
 export class AirtableIntrospector extends DataSourceIntrospector {
   protected client!: AxiosInstance;
 
   static mapFields({
-    fields, record: { fields: record },
-  }: { fields: AirtableField[], record: AirtableRecord }): Field[] {
-    return fields.map((field) => ({
-      name: field.name,
-      jsType: typeof record[field.name],
-      value: record[field.name],
-      dataSourceType: field.type,
-    }));
+    fields,
+    rows,
+  }: { fields: DataSourceFields[], rows: AirtableRecord[] }) {
+    return {
+      fields: parseFieldsDefinition({ fields, rows }),
+    };
   }
 
   async init({ auth }: AirtableConnectionDetails) {
@@ -27,11 +27,13 @@ export class AirtableIntrospector extends DataSourceIntrospector {
         Authorization: `Bearer ${auth}`,
       },
     });
-
-    return this;
   }
 
-  async introspect({ baseId, tableId }: AirtableIntrospectionDetails) {
+  async introspect({
+    baseId,
+    tableId,
+    sampleSize = DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE,
+  }: AirtableIntrospectionDetails) {
     const {
       data: {
         tables,
@@ -45,17 +47,20 @@ export class AirtableIntrospector extends DataSourceIntrospector {
 
     const {
       data: {
-        records: [record],
+        records: rows,
       },
     } = await this.client.get<{ records: AirtableRecord[] }>(`/${baseId}/${tableId}`, {
       headers: {
-        maxRecords: 1,
+        maxRecords: sampleSize,
       },
     });
 
     return AirtableIntrospector.mapFields({
-      fields: table.fields,
-      record,
+      fields: table.fields.map((f) => ({
+        name: f.name,
+        type: f.type,
+      })),
+      rows,
     });
   }
 

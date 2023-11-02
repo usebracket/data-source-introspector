@@ -1,8 +1,41 @@
-type JSTypes = 'undefined' | 'object' | 'boolean' | 'number' | 'bigint' | 'string' | 'symbol' | 'function';
+export enum BracketTypes {
+  UNDEFINED = 'undefined',
+  OBJECT = 'object',
+  BOOLEAN = 'boolean',
+  NUMBER = 'number',
+  BIGINT = 'bigint',
+  STRING = 'string',
+  ARRAY = 'array',
+  NULL = 'null',
+  DATE = 'date',
+}
 
-export type Field = {
+export type TypeDescription = {
+  probability: number,
+  unique: number,
+  values: unknown[],
+  type: BracketTypes,
+  count: number
+};
+
+export type PropertyDescription = {
+  count: number;
+  dataSourceType: unknown;
+  hasDuplicates: boolean;
+  probability: number;
+  nullProbability: number;
+  types: TypeDescription[],
+};
+
+export type IntrospectionResult = {
+  fields: Map<string, PropertyDescription>;
+};
+
+export type DataSourceFields = {
   name: string;
-  value: unknown;
-  dataSourceType: any;
-  jsType: JSTypes;
+  type: unknown;
+};
+
+export type SampleSize = {
+  sampleSize?: number;
 };

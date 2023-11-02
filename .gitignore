@@ -31,4 +31,4 @@ lerna-debug.log*
 .vscode
 
 # Enviroment Variables
-*.env.*
+*.env

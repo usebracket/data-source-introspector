@@ -1,7 +1,9 @@
+import { SampleSize } from '../../types';
+
 export type AirtableIntrospectionDetails = {
   tableId: string;
   baseId: string;
-};
+} & SampleSize;
 
 export type AirtableConnectionDetails = {
   auth: string;
