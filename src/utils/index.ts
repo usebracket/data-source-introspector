@@ -38,7 +38,7 @@ const getBracketType = (val: unknown): BracketTypes => {
   return BracketTypes.UNDEFINED;
 };
 
-export const parseSchema = ({
+export const parseFieldsDefinition = ({
   fields,
   rows,
 }: { fields: DataSourceFields[], rows: Array<Record<string, any>> }) => {

@@ -4,8 +4,8 @@ import {
   AirtableConnectionDetails, AirtableIntrospectionDetails,
   AirtableRecord, AirtableTable,
 } from './types';
-import { parseSchema } from '../../utils';
-import { DEFAULT_INTROSPECTION_DEPTH } from '../../constants';
+import { parseFieldsDefinition } from '../../utils';
+import { DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE } from '../../constants';
 import { DataSourceFields } from '../../types';
 
 export class AirtableIntrospector extends DataSourceIntrospector {
@@ -16,7 +16,7 @@ export class AirtableIntrospector extends DataSourceIntrospector {
     rows,
   }: { fields: DataSourceFields[], rows: AirtableRecord[] }) {
     return {
-      fields: parseSchema({ fields, rows }),
+      fields: parseFieldsDefinition({ fields, rows }),
     };
   }
 
@@ -32,7 +32,7 @@ export class AirtableIntrospector extends DataSourceIntrospector {
   async introspect({
     baseId,
     tableId,
-    introspectionDepth = DEFAULT_INTROSPECTION_DEPTH,
+    sampleSize = DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE,
   }: AirtableIntrospectionDetails) {
     const {
       data: {
@@ -51,7 +51,7 @@ export class AirtableIntrospector extends DataSourceIntrospector {
       },
     } = await this.client.get<{ records: AirtableRecord[] }>(`/${baseId}/${tableId}`, {
       headers: {
-        maxRecords: introspectionDepth,
+        maxRecords: sampleSize,
       },
     });
 

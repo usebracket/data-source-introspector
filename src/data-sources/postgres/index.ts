@@ -1,8 +1,8 @@
 import { Client as PostgresClient } from 'pg';
 import { DataSourceIntrospector } from '../data-source-introspector';
 import { PostgresConnectionDetails, PostgresIntrospectionDetails } from './types';
-import { parseSchema } from '../../utils';
-import { DEFAULT_INTROSPECTION_DEPTH } from '../../constants';
+import { parseFieldsDefinition } from '../../utils';
+import { DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE } from '../../constants';
 import { DataSourceFields } from '../../types';
 
 export class PostgresIntrospector extends DataSourceIntrospector {
@@ -10,7 +10,7 @@ export class PostgresIntrospector extends DataSourceIntrospector {
 
   static addLimitToQuery({
     query,
-    limit = DEFAULT_INTROSPECTION_DEPTH,
+    limit = DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE,
   }: { query: string, limit?: number }) {
     const extraQueryWithSemicolon = !/;\s*$/.test(query)
       ? `${query};`
@@ -26,7 +26,7 @@ export class PostgresIntrospector extends DataSourceIntrospector {
     rows,
   }: { fields: DataSourceFields[], rows: Record<string, unknown>[] }) {
     return {
-      fields: parseSchema({ fields, rows }),
+      fields: parseFieldsDefinition({ fields, rows }),
     };
   }
 
@@ -40,7 +40,7 @@ export class PostgresIntrospector extends DataSourceIntrospector {
   async introspect({
     table, schema,
     query: customQuery,
-    introspectionDepth = DEFAULT_INTROSPECTION_DEPTH,
+    sampleSize = DEFAULT_INTROSPECTION_RECORD_SAMPLE_SIZE,
   }: PostgresIntrospectionDetails) {
     try {
       if (customQuery) {
@@ -49,7 +49,7 @@ export class PostgresIntrospector extends DataSourceIntrospector {
           rows,
         } = await this.client.query(PostgresIntrospector.addLimitToQuery({
           query: customQuery,
-          limit: introspectionDepth,
+          limit: sampleSize,
         }));
 
         return PostgresIntrospector.mapFields({
@@ -69,7 +69,7 @@ export class PostgresIntrospector extends DataSourceIntrospector {
         rows,
       } = await this.client.query(PostgresIntrospector.addLimitToQuery({
         query,
-        limit: introspectionDepth,
+        limit: sampleSize,
       }));
 
       return PostgresIntrospector.mapFields({

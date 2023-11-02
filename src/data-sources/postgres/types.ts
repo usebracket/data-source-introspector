@@ -1,10 +1,10 @@
 import { ClientConfig } from 'pg';
-import { IntrospectionDepth } from '../../types';
+import { SampleSize } from '../../types';
 
 export type PostgresIntrospectionDetails = Partial<{
   table: string;
   schema: string;
   query: string;
-}> & IntrospectionDepth;
+}> & SampleSize;
 
 export type PostgresConnectionDetails = Omit<ClientConfig, 'stream'>;

@@ -36,6 +36,6 @@ export type DataSourceFields = {
   type: unknown;
 };
 
-export type IntrospectionDepth = {
-  introspectionDepth?: number;
+export type SampleSize = {
+  sampleSize?: number;
 };
