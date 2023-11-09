@@ -78,5 +78,7 @@ If you have questions, concerns, bug reports, etc, please file an issue in this 
 
 General instructions on _how_ to contribute to this project can be founded [here](CONTRIBUTING.md).
 
+This repository is maintained by the [Bracket](https://www.usebracket.com/) engineering team.
+
 
 ----
